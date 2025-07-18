@@ -21,10 +21,10 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restaurar dependencias
-        run: dotnet restore ./backend/GestorTareas.sln
+        run: dotnet restore ./Backend/GestorTareas.sln
 
       - name: Compilar solución
-        run: dotnet build ./backend/GestorTareas.sln --configuration Release --no-restore
+        run: dotnet build ./Backend/GestorTareas.sln --configuration Release --no-restore
 
   build-frontend:
     name: Frontend (React)
@@ -40,7 +40,7 @@ jobs:
           node-version: '20'
 
       - name: Instalar dependencias
-        run: cd frontend && npm install
+        run: cd Frontend && npm install
 
       - name: Compilar frontend
-        run: cd frontend && npm run build
+        run: cd Frontend && npm run build
