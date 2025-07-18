@@ -1,151 +1,115 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import api from '../api/api';
+import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useUser } from '../context/UserContext';
 
 const Container = styled.div`
   max-width: 700px;
-  margin: 2em auto;
+  width: 96%;
+  margin: 2.5em auto;
   background: #fff;
-  padding: 2.5em 2em 2em 2em;
+  padding: 2em 1.5em;
   border-radius: 14px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.09);
-  font-family: 'Segoe UI', 'Roboto', 'Arial', sans-serif;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  @media (max-width: 600px) {
+    padding: 1em 0.5em;
+    margin: 1em 0.5em;
+    max-width: 99vw;
+  }
 `;
-
 const ListItem = styled.li`
   display: flex;
   flex-direction: column;
-  padding: 1em;
-  border-bottom: 1px solid #eee;
-  background: #fafbfc;
+  padding: 0.7em 1em;
+  border-bottom: 1px solid #e3f2fd;
   border-radius: 8px;
-  margin-bottom: 1em;
+  background: #f9f9f9;
+  margin-bottom: 0.7em;
+  box-shadow: 0 1px 4px rgba(25, 118, 210, 0.04);
 `;
-
 const Input = styled.input`
   margin-bottom: 0.4em;
-  padding: 0.6em 1em;
-  border-radius: 6px;
-  border: 1px solid #ccc;
+  border-radius: 8px;
+  border: 1px solid #cfd8dc;
+  background: #fff;
   font-size: 1em;
-  font-family: inherit;
+  padding: 0.5em 0.8em;
+  transition: border 0.2s;
+  &:focus {
+    border-color: #1976d2;
+    outline: none;
+  }
 `;
-
 const Row = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 1em;
 `;
-
 const DangerButton = styled.button`
   background: #d32f2f;
   color: white;
   border: none;
-  padding: 0.5em 1.1em;
-  border-radius: 6px;
+  border-radius: 8px;
+  padding: 0.3em 0.9em;
   font-size: 1em;
-  cursor: pointer;
-  font-family: inherit;
-  transition: background 0.2s;
-  &:hover { background: #b71c1c; }
-`;
-
-const Button = styled.button`
-  background: #1976d2;
-  color: white;
-  border: none;
-  padding: 0.5em 1.1em;
-  border-radius: 6px;
-  font-size: 1em;
-  cursor: pointer;
-  font-family: inherit;
+  font-weight: 500;
   margin-left: 0.5em;
+  cursor: pointer;
   transition: background 0.2s;
-  &:hover { background: #125ea2; }
-`;
-
-const EditButton = styled(Button)`
-  background: #ffa726;
-  color: #333;
-  &:hover { background: #fb8c00; color: #fff; }
-`;
-
-const CancelButton = styled(Button)`
-  background: #aaa;
-  color: #fff;
-  &:hover { background: #888; }
-`;
-
-const SaveButton = styled(Button)`
-  background: #43a047;
-  &:hover { background: #2e7031; }
-`;
-
-const Section = styled.div`
-  margin-bottom: 2em;
-`;
-
-const SmallButton = styled(Button)`
-  font-size: 0.85em;
-  padding: 0.22em 0.65em;
-  border-radius: 4px;
-  margin-left: 0;
-`;
-const EditNameButton = styled(EditButton)`
-  font-size: 0.85em;
-  padding: 0.22em 0.65em;
-  border-radius: 4px;
-  margin-left: 0;
-`;
-const SaveNameButton = styled(SaveButton)`
-  font-size: 0.85em;
-  padding: 0.22em 0.65em;
-  border-radius: 4px;
-  margin-left: 0;
-`;
-const CancelNameButton = styled(CancelButton)`
-  font-size: 0.85em;
-  padding: 0.22em 0.65em;
-  border-radius: 4px;
-  margin-left: 0;
+  &:hover, &:focus {
+    background: #b71c1c;
+    outline: none;
+  }
 `;
 
 function ListaDetallePage() {
   const { id } = useParams();
+  const { user } = useUser();
   const [tareas, setTareas] = useState([]);
   const [titulo, setTitulo] = useState('');
   const [comentario, setComentario] = useState('');
   const [etiqueta, setEtiqueta] = useState('');
+  const [usuariosCompartidos, setUsuariosCompartidos] = useState([]);
   const [nombreLista, setNombreLista] = useState('');
-  const [usuarioCompartir, setUsuarioCompartir] = useState('');
-  const [errorCompartir, setErrorCompartir] = useState('');
   const navigate = useNavigate();
-  const [editandoNombre, setEditandoNombre] = useState(false);
-  const [nuevoNombre, setNuevoNombre] = useState('');
-  const [editandoTareaId, setEditandoTareaId] = useState(null);
-  const [tareaEdit, setTareaEdit] = useState({ titulo: '', etiqueta: '', comentario: '' });
-
-  const cargarTareas = async () => {
-  
-    const res = await api.get('/api/Tarea');
-    setTareas(res.data.filter(t => t.listaTareasId === parseInt(id)));
-  };
-
-  const cargarNombreLista = async () => {
-    const res = await api.get(`/api/ListaTareas/${id}`);
-    setNombreLista(res.data.nombre);
-  };
 
   useEffect(() => {
     cargarTareas();
+    cargarCompartidos();
     cargarNombreLista();
   }, [id]);
 
+  const cargarTareas = async () => {
+    const res = await axios.get('/api/Tarea');
+    setTareas(res.data.filter(t => t.listaTareasId === parseInt(id)));
+  };
+
+  const cargarCompartidos = async () => {
+    try {
+      const res = await axios.get('/api/ListaCompartida');
+      const compartidos = res.data.filter(c => c.listaTareasId === parseInt(id));
+      if (compartidos.length === 0) { setUsuariosCompartidos([]); return; }
+      const usuariosRes = await axios.get('/api/Usuario');
+      const usuarios = usuariosRes.data.filter(u => compartidos.some(c => c.usuarioCompartidoId === u.id));
+      setUsuariosCompartidos(usuarios.map(u => u.nombre));
+    } catch {
+      setUsuariosCompartidos([]);
+    }
+  };
+
+  const cargarNombreLista = async () => {
+    try {
+      const res = await axios.get(`/api/ListaTareas/${id}`);
+      setNombreLista(res.data.nombre);
+    } catch {
+      setNombreLista('');
+    }
+  };
+
   const handleAdd = async (e) => {
     e.preventDefault();
-    await api.post('/api/Tarea', {
+    await axios.post('/api/Tarea', {
       titulo,
       etiqueta,
       comentario,
@@ -156,172 +120,72 @@ function ListaDetallePage() {
     cargarTareas();
   };
 
-  const handleCompartir = async (e) => {
-    e.preventDefault();
-    setErrorCompartir('');
-    try {
-      // Buscar usuario por nombre
-      const res = await api.get('/api/Usuario');
-      const usuario = res.data.find(u => u.nombre === usuarioCompartir);
-      if (!usuario) {
-        setErrorCompartir('No se encontró un usuario con ese nombre.');
-        return;
-      }
-      await api.post('/api/ListaCompartida', {
-        listaTareasId: parseInt(id),
-        usuarioCompartidoId: usuario.id
-      });
-      setUsuarioCompartir('');
-      alert('¡Lista compartida!');
-    } catch (err) {
-      alert('Error al compartir lista: ' + (err.response?.data?.message || err.message));
-      console.error('Error al compartir lista:', err);
-    }
-  };
-
   const toggleEstado = async (tarea) => {
     const updated = { ...tarea, completada: !tarea.completada };
-    await api.put(`/api/Tarea/${tarea.id}`, updated);
+    await axios.put(`/api/Tarea/${tarea.id}`, updated);
+    cargarTareas();
+  };
+
+  const editarCampo = async (tarea, campo, valor) => {
+    if (!valor || valor === tarea[campo]) return;
+    const updated = { ...tarea, [campo]: valor };
+    await axios.put(`/api/Tarea/${tarea.id}`, updated);
     cargarTareas();
   };
 
   const eliminarTarea = async (idTarea) => {
-    const confirmar = window.confirm('¿Eliminar esta tarea?');
+    const confirmar = window.confirm('¿Estás seguro de que querés eliminar esta tarea?');
     if (!confirmar) return;
-    await api.delete(`/api/Tarea/${idTarea}`);
+    await axios.delete(`/api/Tarea/${idTarea}`);
     cargarTareas();
   };
 
-  const handleEditarNombre = () => {
-    setNuevoNombre(nombreLista);
-    setEditandoNombre(true);
-  };
-
-  const handleGuardarNombre = async () => {
-    try {
-      await api.put(`/api/ListaTareas/${id}`, { nombre: nuevoNombre });
-      setNombreLista(nuevoNombre);
-      setEditandoNombre(false);
-    } catch (err) {
-      alert('Error al editar el nombre: ' + (err.response?.data?.message || err.message));
-    }
-  };
-
-  const handleEditarTarea = (t) => {
-    setEditandoTareaId(t.id);
-    setTareaEdit({ titulo: t.titulo, etiqueta: t.etiqueta, comentario: t.comentario });
-  };
-
-  const handleGuardarTarea = async (tarea) => {
-    try {
-      await api.put(`/api/Tarea/${tarea.id}`, {
-        ...tarea,
-        titulo: tareaEdit.titulo,
-        etiqueta: tareaEdit.etiqueta,
-        comentario: tareaEdit.comentario
-      });
-      setEditandoTareaId(null);
-      setTareaEdit({ titulo: '', etiqueta: '', comentario: '' });
-      cargarTareas();
-    } catch (err) {
-      alert('Error al editar tarea: ' + (err.response?.data?.message || err.message));
-    }
-  };
-
-  const handleCancelarEditarTarea = () => {
-    setEditandoTareaId(null);
-    setTareaEdit({ titulo: '', etiqueta: '', comentario: '' });
+  const eliminarLista = async () => {
+    const confirmar = window.confirm('¿Estás seguro de que querés eliminar esta lista? Esta acción no se puede deshacer.');
+    if (!confirmar) return;
+    await axios.delete(`/api/ListaTareas/${id}`);
+    navigate('/listas');
   };
 
   return (
     <Container>
-      <h2 style={{ marginBottom: '0.5em', fontWeight: 600, fontSize: '1.5em', letterSpacing: '0.5px' }}>
-        {editandoNombre ? (
-          <span style={{ display: 'flex', alignItems: 'center', gap: '0.7em' }}>
-            <Input
-              value={nuevoNombre}
-              onChange={e => setNuevoNombre(e.target.value)}
-              style={{ width: '60%', marginRight: 0, marginBottom: 0 }}
-            />
-            <SaveNameButton type="button" onClick={handleGuardarNombre}>Guardar</SaveNameButton>
-            <CancelNameButton type="button" onClick={() => setEditandoNombre(false)}>Cancelar</CancelNameButton>
-          </span>
-        ) : (
-          <span style={{ display: 'flex', alignItems: 'center', gap: '0.7em' }}>
-            Lista: {nombreLista}
-            <EditNameButton type="button" onClick={handleEditarNombre}>Editar nombre</EditNameButton>
-          </span>
-        )}
-      </h2>
-      {/* Formulario para compartir lista */}
-      <Section>
-        <form onSubmit={handleCompartir} style={{ display: 'flex', gap: '1em', alignItems: 'center' }}>
-          <Input
-            value={usuarioCompartir}
-            onChange={e => setUsuarioCompartir(e.target.value)}
-            placeholder="Nombre de usuario para compartir"
-            required
-            style={{ marginBottom: 0, flex: 1 }}
-          />
-          <Button type="submit">Compartir lista</Button>
-        </form>
-        {errorCompartir && <div style={{ color: 'red', marginTop: '0.5em' }}>{errorCompartir}</div>}
-      </Section>
-      {/* Formulario para agregar tarea */}
-      <Section>
-        <form onSubmit={handleAdd} style={{ display: 'flex', flexDirection: 'column', gap: '1em' }}>
-          <Input value={titulo} onChange={e => setTitulo(e.target.value)} placeholder="Título" required />
-          <Input value={etiqueta} onChange={e => setEtiqueta(e.target.value)} placeholder="Etiqueta (opcional)" />
-          <Input value={comentario} onChange={e => setComentario(e.target.value)} placeholder="Comentario (opcional)" />
-          <Button type="submit" style={{ alignSelf: 'flex-end', marginLeft: 0 }}>Agregar tarea</Button>
-        </form>
-      </Section>
+      <h2>Detalle de Lista</h2>
+      <div style={{ marginBottom: '1em' }}>
+        <strong>Nombre:</strong> {nombreLista}
+      </div>
+      <div style={{ marginBottom: '1em' }}>
+        <strong>Compartida con:</strong> {usuariosCompartidos.length > 0 ? usuariosCompartidos.join(', ') : 'Nadie'}
+      </div>
+      <DangerButton onClick={eliminarLista} style={{ marginBottom: '2em' }}>Eliminar lista</DangerButton>
+      <form onSubmit={handleAdd} style={{ display: 'flex', flexDirection: 'column', gap: '1em', marginBottom: '2em' }}>
+        <input value={titulo} onChange={e => setTitulo(e.target.value)} placeholder="Título" required />
+        <input value={etiqueta} onChange={e => setEtiqueta(e.target.value)} placeholder="Etiqueta (opcional)" />
+        <input value={comentario} onChange={e => setComentario(e.target.value)} placeholder="Comentario (opcional)" />
+        <button type="submit">Agregar</button>
+      </form>
       <ul style={{ listStyle: 'none', padding: 0 }}>
         {tareas.map(t => (
           <ListItem key={t.id}>
             <Row>
-              {editandoTareaId === t.id ? (
-                <>
-                  <Input
-                    value={tareaEdit.titulo}
-                    onChange={e => setTareaEdit({ ...tareaEdit, titulo: e.target.value })}
-                    placeholder="Título"
-                    style={{ marginBottom: 0, width: '30%' }}
-                  />
-                  <Input
-                    value={tareaEdit.etiqueta}
-                    onChange={e => setTareaEdit({ ...tareaEdit, etiqueta: e.target.value })}
-                    placeholder="Etiqueta"
-                    style={{ marginBottom: 0, width: '20%' }}
-                  />
-                  <Input
-                    value={tareaEdit.comentario}
-                    onChange={e => setTareaEdit({ ...tareaEdit, comentario: e.target.value })}
-                    placeholder="Comentario"
-                    style={{ marginBottom: 0, width: '30%' }}
-                  />
-                  <SaveButton type="button" onClick={() => handleGuardarTarea(t)}>Guardar</SaveButton>
-                  <CancelButton type="button" onClick={handleCancelarEditarTarea}>Cancelar</CancelButton>
-                </>
-              ) : (
-                <>
-                  <span style={{ fontWeight: 500 }}>{t.titulo}</span>
-                  <div style={{ display: 'flex', gap: '0.5em' }}>
-                    <Button onClick={() => toggleEstado(t)} style={{ background: t.completada ? '#43a047' : '#1976d2', minWidth: '40px' }}>
-                      {t.completada ? '✅' : '⏳'}
-                    </Button>
-                    <EditButton type="button" onClick={() => handleEditarTarea(t)}>Editar</EditButton>
-                    <DangerButton onClick={() => eliminarTarea(t.id)}>Eliminar</DangerButton>
-                  </div>
-                </>
-              )}
+              <Input
+                defaultValue={t.titulo}
+                onBlur={(e) => editarCampo(t, 'titulo', e.target.value)}
+              />
+              <div>
+                <button onClick={() => toggleEstado(t)}>{t.completada ? '✅' : '⏳'}</button>
+                <DangerButton onClick={() => eliminarTarea(t.id)}>Eliminar</DangerButton>
+              </div>
             </Row>
-            {editandoTareaId !== t.id && (
-              <>
-                <small>Etiqueta: {t.etiqueta}</small>
-                <small>Comentario: {t.comentario}</small>
-              </>
-            )}
+            <Input
+              defaultValue={t.etiqueta || ''}
+              onBlur={(e) => editarCampo(t, 'etiqueta', e.target.value)}
+              placeholder="Etiqueta"
+            />
+            <Input
+              defaultValue={t.comentario || ''}
+              onBlur={(e) => editarCampo(t, 'comentario', e.target.value)}
+              placeholder="Comentario"
+            />
           </ListItem>
         ))}
       </ul>

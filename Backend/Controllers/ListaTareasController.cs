@@ -1,77 +1,67 @@
-﻿using AppTareas.Data;
-using AppTareas.Models;
+﻿using GestorTareas.Dto;
+using GestorTareas.Interface;
+using GestorTareas.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System;
 
-namespace AppTareas.Controllers
+namespace GestorTareas.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     public class ListaTareasController : ControllerBase
     {
-           private readonly ApplicationDbContext _context;
-            public ListaTareasController(ApplicationDbContext context)
+        private readonly IListaTareasService _repositorio;
+        public ListaTareasController(IListaTareasService repositorio)
+        {
+            _repositorio = repositorio;
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<ListaTareasDto>>> GetListas()
+        {
+            var listas = await _repositorio.GetListas();
+            return Ok(listas);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<ListaTareasDto>> GetListaById(int id)
+        {
+            var lista = await _repositorio.GetListaById(id);
+            if (lista == null)
             {
-                _context = context;
+                return NotFound();
             }
 
-            [HttpGet]
-            public async Task<ActionResult<IEnumerable<ListaTareas>>> GetListas()
+            return Ok(lista);
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<ListaTareasDto>> CrearLista(ListaTareasDto listaTareas)
+        {
+            var creada = await _repositorio.CrearLista(listaTareas);
+            return CreatedAtAction(nameof(GetListaById), new { id = creada.Id }, creada);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<ActionResult<ListaTareasDto>> ActualizarLista(int id, ListaTareasDto listaTareas)
+        {
+            var tareaActualizada = await _repositorio.ActualizarLista(id, listaTareas);
+            if (tareaActualizada == null)
             {
-                return await _context.ListaTareas
-                                     .Include(l => l.Tareas)
-                                     .Include(l => l.ListasCompartidas)
-                                     .ToListAsync();
+                return NotFound();
             }
+            return Ok(tareaActualizada);
+        }
 
-            [HttpGet("{id}")]
-            public async Task<ActionResult<ListaTareas>> GetListaById(int id)
+        [HttpDelete("{id}")]
+        public async Task<ActionResult> BorrarLista(int id)
+        {
+            var eliminado = await _repositorio.BorrarLista(id);
+            if (!eliminado)
             {
-                var lista = await _context.ListaTareas
-                                          .Include(l => l.Tareas)
-                                          .Include(l => l.ListasCompartidas)
-                                          .FirstOrDefaultAsync(l => l.Id == id);
-                if (lista == null)
-                    return NotFound();
-
-                return Ok(lista);
+                return NotFound();
             }
-
-            [HttpPost]
-            public async Task<ActionResult<ListaTareas>> CrearLista(ListaTareas lista)
-            {
-            _context.ListaTareas.Add(lista);
-                await _context.SaveChangesAsync();
-                return CreatedAtAction(nameof(GetListaById), new { id = lista.Id }, lista);
-            }
-
-            [HttpPut("{id}")]
-            public async Task<ActionResult<ListaTareas>> ActualizarLista(int id, ListaTareas lista)
-            {
-                var existente = await _context.ListaTareas.FindAsync(id);
-                if (existente == null)
-                    return NotFound();
-
-                existente.Nombre = lista.Nombre;
-                existente.UsuarioId = lista.UsuarioId;
-
-                await _context.SaveChangesAsync();
-                return Ok(existente);
-            }
-
-            [HttpDelete("{id}")]
-            public async Task<IActionResult> BorrarLista(int id)
-            {
-                var lista = await _context.ListaTareas.FindAsync(id);
-                if (lista == null)
-                    return NotFound();
-
-                _context.ListaTareas.Remove(lista);
-                await _context.SaveChangesAsync();
-                return NoContent();
-            }
+            return NoContent();
         }
     }
-
+}

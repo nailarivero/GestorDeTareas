@@ -1,56 +1,65 @@
-﻿using AppTareas.Data;
-using AppTareas.Models;
+﻿using GestorTareas.Dto;
+using GestorTareas.Interface;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
-namespace AppTareas.Controllers
+namespace GestorTareas.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     public class ListaCompartidaController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
-
-        public ListaCompartidaController(ApplicationDbContext context)
+        private readonly IListaCompartidaService _repositorio;
+        public ListaCompartidaController(IListaCompartidaService repositorio)
         {
-            _context = context;
+            _repositorio = repositorio;
+
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ListaCompartida>>> GetCompartidas()
+
+        public async Task<ActionResult<IEnumerable<ListaCompartidaDto>>> GetCompartidas()
         {
-            return await _context.ListasCompartidas.ToListAsync();
+
+            var compartidas = await _repositorio.GetCompartidas();
+            return Ok(compartidas);
+
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<ListaCompartida>> GetCompartidaById(int id)
+        public async Task<ActionResult<ListaCompartidaDto>> GetCompartidaById(int id)
         {
-            var compartida = await _context.ListasCompartidas.FindAsync(id);
+            var compartida = await _repositorio.GetCompartidaById(id);
             if (compartida == null)
+            {
                 return NotFound();
+            }
 
             return Ok(compartida);
-        }
 
+        }
         [HttpPost]
-        public async Task<ActionResult<ListaCompartida>> CompartirLista(ListaCompartida compartida)
+
+        public async Task<ActionResult<ListaCompartidaDto>> CompartirLista(ListaCompartidaDto dto)
         {
-            _context.ListasCompartidas.Add(compartida);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetCompartidaById), new { id = compartida.Id }, compartida);
+
+            var creada = await _repositorio.CompartirLista(dto);
+            return CreatedAtAction(nameof(GetCompartidaById), new { id = creada.Id }, creada);
+
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> BorrarCompartida(int id)
-        {
-            var compartida = await _context.ListasCompartidas.FindAsync(id);
-            if (compartida == null)
-                return NotFound();
 
-            _context.ListasCompartidas.Remove(compartida);
-            await _context.SaveChangesAsync();
+        public async Task<ActionResult> BorrarCompartida(int id)
+        {
+
+            var eliminado = await _repositorio.BorrarCompartida(id);
+            if (!eliminado)
+            {
+                return NotFound();
+            }
             return NoContent();
         }
     }
 }
+
