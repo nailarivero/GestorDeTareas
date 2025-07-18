@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.13.35931.197 d17.13
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GestorTareas", "GestorTareas\GestorTareas.csproj", "{F37BE387-9B86-4490-AC2F-3DE02C751A87}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GestorTareas", "GestorTareas.csproj", "{F37BE387-9B86-4490-AC2F-3DE02C751A87}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
